@@ -1,7 +1,9 @@
-# React Admin Dashboard
+# Tasks List - FrontEnd
 
-Build a COMPLETE React Admin Dashboard App | React, Material UI, Data Grid, Light & Dark Mode
+Frontend em React, utilizando Material UI, Consumindo backend utilizando a lib axios.
 
-Video: https://www.youtube.com/watch?v=wYpCWwD1oz0
-
-For all related questions and discussions about this project, check out the discord: https://discord.gg/2FfPeEk2mX
+[Procedimentos para teste]
+- Utilizar o git para clonar o repositório. ( git clone https://github.com/tvihost/tasklist-frontend.git )
+- Após clonado o repositório, entrar no diretório tasklist-frontend, rodar: npm install
+- Para executar, rodar o comando: npm run start
+- Aguardar build completo do webpack, abrirá uma aba no endereço: http://localhost:3003 , ou acesse manualmente.
