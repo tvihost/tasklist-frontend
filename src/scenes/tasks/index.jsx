@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { Box, IconButton, useTheme, Button } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import Snackbar, { SnackbarOrigin } from '@mui/material/Snackbar';
@@ -6,12 +6,14 @@ import Alert from '@mui/material/Alert';
 import InputBase from "@mui/material/InputBase";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from '@mui/icons-material/Edit';
+import Delete from "@mui/icons-material/Delete";
 import DeleteIcon from '@mui/icons-material/Delete';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import { GridToolbarContainer, GridToolbarColumnsButton, GridToolbarFilterButton, GridToolbarDensitySelector, GridToolbarExport } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/Header";
 import EditModal from "../../components/EditModal";
@@ -29,13 +31,28 @@ const Tasks = () => {
   const [alertText, setAlertText] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
-
+  const [key, setKey] = useState(0);
   const [searchText, setSearchText] = useState('');
   const [filteredRows, setFilteredRows] = useState([]);
 
   useEffect(() => {
     getTasks();
   }, []);
+
+  const [openDialogEraseFinishedTasks, setOpenDialogEraseFinishedTasks] = useState(false);
+
+  const handleConfirmEraseFinishedTasks = () => {
+    deleteAllFinishedTasks()
+    setOpenDialogEraseFinishedTasks(false);
+  };
+
+  const handleOpenDialogEraseFinishedTasks = () => {
+    setOpenDialogEraseFinishedTasks(true);
+  };
+
+  const handleCloseDialogEraseFinishedTasks = () => {
+    setOpenDialogEraseFinishedTasks(false);
+  };
 
   const handleSearch = (event) => {
     const value = event.target.value;
@@ -49,6 +66,20 @@ const Tasks = () => {
 
     setFilteredRows(filteredData);
   };
+
+  async function deleteAllFinishedTasks(){
+    await axios.post('http://localhost:3000/tasks/delete', {"status":"CONCLUIDO"}, { withCredentials: true })
+    .then(response => {
+      if(response.status === 204){
+        setAlertText("Tarefas concluídas deletadas com sucesso.");
+        setSeverity("success");
+        handleOpen();
+      }
+    })
+    .catch(error => {
+      console.log(error);
+    });
+  }
 
   async function getTasks(){
     await axios.get('http://localhost:3000/tasks', { withCredentials: true })
@@ -99,6 +130,7 @@ const Tasks = () => {
 
   const handleEditClick = (row) => {
     setSelectedRow(row);
+    setKey(prevKey => prevKey + 1);
     setEditOpen(true);
   };
 
@@ -142,7 +174,12 @@ const Tasks = () => {
       field: "status",
       headerName: "Status",
       flex: 1,
-      width: 50
+      renderCell: (params) => {
+        const status = params.value;
+        let cellStyle = status === "CONCLUIDO" ? { backgroundColor: 'green', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', width:'60%', padding:'2px' } : status === 'ATIVO' ? { backgroundColor: 'blue', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', width:'60%', padding:'2px' } : { backgroundColor: 'red', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', width:'60%', padding:'2px' };
+
+        return <div style={cellStyle}>{params.value}</div>;
+      },
     },
     {
       field: "created_at",
@@ -180,6 +217,54 @@ const Tasks = () => {
       ),
     },
   ];
+
+  const handleDeleteAllFinishedTasks = () => {
+    
+  };
+
+  const ConfirmDialogDeleteFinishedTasks = ({ open, onClose, onConfirm }) => {
+    return (
+      <Dialog open={open} onClose={onClose}>
+        <DialogTitle>Confirmação</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Deseja realmente limpar todas as tarefas concluídas?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="inherit" variant="outlined">
+            Cancelar
+          </Button>
+          <Button onClick={onConfirm} color="error" variant="contained" autoFocus>
+            Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  const DeleteToolbar = () => {
+    return (
+      <div>
+        <Button color="inherit" variant="text" onClick={handleOpenDialogEraseFinishedTasks}>
+          <DeleteIcon />
+          Limpar Concluídos
+        </Button>
+      </div>
+    );
+  };
+
+  function CustomToolbar() {
+    return (
+      <GridToolbarContainer>
+        <GridToolbarColumnsButton />
+        <GridToolbarFilterButton />
+        <GridToolbarDensitySelector />
+        <GridToolbarExport />
+        <DeleteToolbar />
+      </GridToolbarContainer>
+    );
+  }
 
   return (
     <Box m="20px">
@@ -233,7 +318,7 @@ const Tasks = () => {
         <DataGrid
           rows={filteredRows}
           columns={columns}
-          components={{ Toolbar: GridToolbar }}
+          components={{ Toolbar: CustomToolbar}}
           localeText={locale_ptBR}
         />
       </Box>
@@ -266,7 +351,12 @@ const Tasks = () => {
           {alertText}
         </Alert>
       </Snackbar>
-      <EditModal open={editOpen} handleClose={handleEditClose} rowData={selectedRow} />
+      <EditModal key={key} open={editOpen} handleClose={handleEditClose} rowData={selectedRow} />
+      <ConfirmDialogDeleteFinishedTasks 
+        open={openDialogEraseFinishedTasks} 
+        onClose={handleCloseDialogEraseFinishedTasks} 
+        onConfirm={handleConfirmEraseFinishedTasks} 
+      />
     </Box>
   );
 };
