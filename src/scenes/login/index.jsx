@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
 import { Navigate } from "react-router-dom";
 import axios from 'axios';
-import './Login.css';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showError, setShowError] = useState(false);
+
+  React.useEffect(() => {
+    import('./Login.css');
+    return () => {
+      
+    };
+  }, []);
+
   const handleLogin = async () => {
     await axios.post('http://localhost:3000/auth/login',{"email":username,"password":password},{ withCredentials: true })
     .then(response => {
       if(response.status === 200){
         setIsLoggedIn(response.data.isLoggedIn);
-        window.location.href = '/';
+        window.location.href = '/tasks';
       }
     })
     .catch(error => {
